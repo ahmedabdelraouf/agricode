@@ -101,9 +101,79 @@ class AuthController extends Controller
             $responseBody = $response->getBody()->getContents();
 
             // Return the response from the external API
-            return response()->json(json_decode($responseBody), $response->getStatusCode());
+            return response()->json($this->handleResponse(true, 'Crop predition is successfull performed',
+                json_decode($responseBody)), $response->getStatusCode());
         } catch (\Exception $e) {
-            return response()->json(['error' => 'Failed to make Crop prediction'], 500);
+            return response()->json($this->handleResponse(false, 'Failed to make Crop prediction'), 422);
+        }
+    }
+
+
+    public function predictFertilizer(Request $request)
+    {
+        // Validate the incoming request
+        $request->validate([
+            'features' => 'required|array',
+        ]);
+
+        $features = $request->input('features');
+
+        // Prepare the payload for the API request
+        $payload = json_encode(['features' => $features]);
+
+        // Create a GuzzleHTTP client
+        $client = new Client();
+
+        try {
+            // Make the request to the external API
+            $response = $client->post('http://localhost:5000/predictFertilizer', [
+                'headers' => [
+                    'Content-Type' => 'application/json',
+                ],
+                'body' => $payload,
+            ]);
+
+            // Get the response body
+            $responseBody = $response->getBody()->getContents();
+
+            // Return the response from the external API
+            return response()->json($this->handleResponse(true, 'fertilizer predition is successfull performed',
+                json_decode($responseBody)), $response->getStatusCode());
+        } catch (\Exception $e) {
+            return response()->json($this->handleResponse(false, 'Failed to make fertilizer prediction'), 422);
+        }
+    }
+
+    public function predictDisease(Request $request)
+    {
+        // Assuming the image is already in base64 format
+        $base64Image = $request->input('image');
+
+        // Prepare the payload
+        $payload = [
+            'image' => $base64Image
+        ];
+
+        // Create a Guzzle client
+        $client = new Client();
+
+        try {
+            // Make the HTTP request to the external API
+            $response = $client->post('http://localhost:5000/predict-disease', [
+                'headers' => [
+                    'Content-Type' => 'application/json',
+                ],
+                'json' => $payload,
+            ]);
+
+            // Get the response body
+            $responseBody = $response->getBody()->getContents();
+
+            // Return the result (you can customize this part as needed)
+            return response()->json($this->handleResponse(true, 'fertilizer predition is successfull performed',
+                json_decode($responseBody)), $response->getStatusCode());
+        } catch (\Exception $e) {
+            return response()->json($this->handleResponse(false, 'Failed to make fertilizer prediction'), 422);
         }
     }
 

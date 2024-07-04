@@ -146,9 +146,17 @@ class AuthController extends Controller
 
     public function predictDisease(Request $request)
     {
-        // Assuming the image is already in base64 format
-        $base64Image = $request->input('image');
+        // Validate the request to ensure an image file is present
+        $request->validate([
+            'image' => 'required|image|mimes:jpeg,png,jpg,gif|max:2048',
+        ]);
 
+        // Get the uploaded image file
+        $image = $request->file('image');
+
+        // Convert the image to base64 format
+        $imageContent = file_get_contents($image->getRealPath());
+        $base64Image = base64_encode($imageContent);
         // Prepare the payload
         $payload = [
             'image' => $base64Image

@@ -32,7 +32,8 @@ class AuthController extends Controller
         ]);
 
         $token = $user->createToken('agriCodeToken')->plainTextToken;
-        return response()->json($this->handleResponse(true, 'User logged in successfully.', ['user' => $user, 'token' => $token,]), 201);
+        return response()->json($this->handleResponse(true, 'User logged in successfully.',
+            ['user' => $user, 'token' => $token,]), 201);
 
     }
 
@@ -48,16 +49,14 @@ class AuthController extends Controller
             $firstError = array_values($errors)[0][0];
             return response()->json($this->handleResponse(false, $firstError), 422);
         }
-
         $user = User::where('email', $request->email)->first();
 
         if (!$user || !Hash::check($request->password, $user->password)) {
             return response()->json($this->handleResponse(false, "email or password are incorrect."), 422);
         }
-
         $token = $user->createToken('agriCodeToken')->plainTextToken;
-
-        return response()->json($this->handleResponse(true, 'User logged in successfully.', ['user' => $user, 'token' => $token,]));
+        return response()->json($this->handleResponse(true, 'User logged in successfully.',
+            ['user' => $user, 'token' => $token,]));
     }
 
     public function logout(Request $request)
@@ -72,22 +71,17 @@ class AuthController extends Controller
     public function predictCrop(Request $request)
     {
         try {
-            $request->validate([
-                'features' => 'required|array',
-            ]);
+            $request->validate(['features' => 'required|array',]);
         } catch (ValidationException $e) {
             $errors = $e->errors();
             $firstError = array_values($errors)[0][0];
             return response()->json($this->handleResponse(false, $firstError), 422);
         }
         $features = $request->input('features');
-
         // Prepare the payload for the API request
         $payload = json_encode(['features' => $features]);
-
         // Create a GuzzleHTTP client
         $client = new Client();
-
         try {
             // Make the request to the external API
             $response = $client->post('http://localhost:5000/predictCrop', [
@@ -96,34 +90,24 @@ class AuthController extends Controller
                 ],
                 'body' => $payload,
             ]);
-
             // Get the response body
             $responseBody = $response->getBody()->getContents();
-
             // Return the response from the external API
-            return response()->json($this->handleResponse(true, 'Crop predition is successfull performed',
+            return response()->json($this->handleResponse(true, 'Crop prediction is successfull performed',
                 json_decode($responseBody)), $response->getStatusCode());
         } catch (\Exception $e) {
             return response()->json($this->handleResponse(false, 'Failed to make Crop prediction'), 422);
         }
     }
 
-
     public function predictFertilizer(Request $request)
     {
         // Validate the incoming request
-        $request->validate([
-            'features' => 'required|array',
-        ]);
-
+        $request->validate(['features' => 'required|array']);
         $features = $request->input('features');
-
         // Prepare the payload for the API request
         $payload = json_encode(['features' => $features]);
-
-        // Create a GuzzleHTTP client
         $client = new Client();
-
         try {
             // Make the request to the external API
             $response = $client->post('http://localhost:5000/predictFertilizer', [
@@ -132,12 +116,10 @@ class AuthController extends Controller
                 ],
                 'body' => $payload,
             ]);
-
             // Get the response body
             $responseBody = $response->getBody()->getContents();
-
             // Return the response from the external API
-            return response()->json($this->handleResponse(true, 'fertilizer predition is successfull performed',
+            return response()->json($this->handleResponse(true, 'fertilizer prediction is successfull performed',
                 json_decode($responseBody)), $response->getStatusCode());
         } catch (\Exception $e) {
             return response()->json($this->handleResponse(false, 'Failed to make fertilizer prediction'), 422);
@@ -146,39 +128,21 @@ class AuthController extends Controller
 
     public function predictDisease(Request $request)
     {
-        // Validate the request to ensure an image file is present
-        $request->validate([
-            'image' => 'required|image|mimes:jpeg,png,jpg,gif|max:2048',
-        ]);
-
-        // Get the uploaded image file
+        $request->validate(['image' => 'required|image|mimes:jpeg,png,jpg,gif|max:2048',]);
         $image = $request->file('image');
-
-        // Convert the image to base64 format
         $imageContent = file_get_contents($image->getRealPath());
         $base64Image = base64_encode($imageContent);
-        // Prepare the payload
-        $payload = [
-            'image' => $base64Image
-        ];
-
-        // Create a Guzzle client
+        $payload = [            'image' => $base64Image];
         $client = new Client();
-
         try {
-            // Make the HTTP request to the external API
             $response = $client->post('http://localhost:5000/predict-disease', [
                 'headers' => [
                     'Content-Type' => 'application/json',
                 ],
                 'json' => $payload,
             ]);
-
-            // Get the response body
             $responseBody = $response->getBody()->getContents();
-
-            // Return the result (you can customize this part as needed)
-            return response()->json($this->handleResponse(true, 'fertilizer predition is successfull performed',
+            return response()->json($this->handleResponse(true, 'Disease prediction is successfull performed',
                 json_decode($responseBody)), $response->getStatusCode());
         } catch (\Exception $e) {
             return response()->json($this->handleResponse(false, 'Failed to make fertilizer prediction'), 422);

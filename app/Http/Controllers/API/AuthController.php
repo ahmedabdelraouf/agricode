@@ -24,17 +24,14 @@ class AuthController extends Controller
             $firstError = array_values($errors)[0][0];
             return response()->json($this->handleResponse(false, $firstError), 422);
         }
-
         $user = User::create([
             'name' => $request->name,
             'email' => $request->email,
             'password' => Hash::make($request->password),
         ]);
-
         $token = $user->createToken('agriCodeToken')->plainTextToken;
         return response()->json($this->handleResponse(true, 'User logged in successfully.',
             ['user' => $user, 'token' => $token,]), 201);
-
     }
 
     public function login(Request $request)
@@ -150,8 +147,7 @@ K*/
         }
     }
 
-    public
-    function predictFertilizer(Request $request)
+    public function predictFertilizer(Request $request)
     {
         // Validate the incoming request
         $request->validate(['features' => 'required|array']);
@@ -204,8 +200,7 @@ K*/
         }
     }
 
-    public
-    function handleResponse($status = false, $message = "something went wrong", ...$data)
+    public function handleResponse($status = false, $message = "something went wrong", ...$data)
     {
         return [
             'message' => $message,

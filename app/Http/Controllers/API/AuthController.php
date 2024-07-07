@@ -8,8 +8,6 @@ use GuzzleHttp\Client;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Hash;
 use Illuminate\Validation\ValidationException;
-use League\Csv\Reader;
-use League\Csv\Statement;
 
 class AuthController extends Controller
 {
@@ -127,7 +125,7 @@ K*/
 
     }
 
-    public function getFertilizerPrediction($soilType, $cropType)
+    public function getFertilizerPrediction($soilType, $cropType, $areaType, $areaValue)
     {
         $csvFilePath = public_path('Fertilizer_Prediction_with_Fertilization.csv');
         $matchedRow = [];
@@ -140,7 +138,13 @@ K*/
             }
             fclose($handle);
         }
-        return $matchedRow;
+        $valPerCaratOrArce = $matchedRow[6];
+        if ($areaType == "arce") {
+            $valPerCaratOrArce = $matchedRow[6];
+        } else {
+            $valPerCaratOrArce = $matchedRow[6] / 24;
+        }
+        return $areaValue * $valPerCaratOrArce;
     }
 
     public function predictFertilizer(Request $request)
@@ -152,21 +156,21 @@ K*/
         $payload = json_encode(['features' => $features]);
         $client = new Client();
 //        try {
-            // Make the request to the external API
-            $response = $client->post('http://localhost:5000/predictFertilizer', [
-                'headers' => [
-                    'Content-Type' => 'application/json',
-                ],
-                'body' => $payload,
-            ]);
-            // Get the response body
-            $responseBody = $response->getBody()->getContents();
-            $response = json_decode($responseBody);
-            $v = $this->getFertilizerPrediction($this->getSoilType($features[0]),$response[0]);
-            dd($features,$response,$v);
-            // Return the response from the external API
-            return response()->json($this->handleResponse(true, 'fertilizer prediction is successfull performed',
-                json_decode($responseBody)), $response->getStatusCode());
+        // Make the request to the external API
+        $response = $client->post('http://localhost:5000/predictFertilizer', [
+            'headers' => [
+                'Content-Type' => 'application/json',
+            ],
+            'body' => $payload,
+        ]);
+        // Get the response body
+        $responseBody = $response->getBody()->getContents();
+        $response = json_decode($responseBody);
+        $predictionValue = $this->getFertilizerPrediction($this->getSoilType($features[0]), $response[0], $request->input('area_type'), $request->input('area_value'));
+        dd($features, $response, $predictionValue);
+        // Return the response from the external API
+        return response()->json($this->handleResponse(true, 'fertilizer prediction is successfull performed',
+            json_decode($responseBody)), $response->getStatusCode());
 //        } catch (\Exception $e) {
 //            return response()->json($this->handleResponse(false, 'Failed to make fertilizer prediction'), 422);
 //        }

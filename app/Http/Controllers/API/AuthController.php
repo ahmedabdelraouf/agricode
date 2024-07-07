@@ -8,6 +8,8 @@ use GuzzleHttp\Client;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Hash;
 use Illuminate\Validation\ValidationException;
+use League\Csv\Reader;
+use League\Csv\Statement;
 
 class AuthController extends Controller
 {
@@ -100,6 +102,60 @@ class AuthController extends Controller
         }
     }
 
+    public function getSoilType($soilType)
+    {
+        /*feature elements in order:
+Soil_Type, ({'Black': 0, 'Clayey': 1, 'Loamy': 2, 'Red': 3, 'Sandy': 4})
+Crop_Type, ({'Barley': 0, 'Cotton': 1, 'Cucumber': 2, 'Maize': 3, 'Millets': 4, 'Oil seeds': 5, 'Paddy': 6, 'Sugarcane': 7, 'Tobacco': 8, 'Wheat': 9, 'rice': 10, 'tomatoes': 11})
+N,
+P,
+K*/
+        switch ($soilType) {
+            case 0:
+                return "Black";
+            case 1:
+                return "Clayey";
+            case 2:
+                return "Loamy";
+            case 3:
+                return "Red";
+            case 4:
+                return "Sandy";
+            default:
+                return "Black";
+        }
+
+    }
+
+    public function getFertilizerPrediction($soilType, $cropType)
+    {
+        // Define the path to the CSV file
+        $csvFilePath = public_path('Fertilizer_Prediction_with_Fertilization.csv');
+
+        // Load the CSV file
+        if (!file_exists($csvFilePath) || !is_readable($csvFilePath)) {
+            return response()->json(['error' => 'CSV file not found or not readable'], 404);
+        }
+
+        // Use League\Csv\Reader to read the CSV file
+        $csv = Reader::createFromPath($csvFilePath, 'r');
+        $csv->setHeaderOffset(0); // If your CSV file has headers, adjust accordingly
+
+        // Create a Statement to filter records
+        $stmt = (new Statement())
+            ->where(function ($record) use ($soilType, $cropType) {
+                return $record[0] == $soilType && $record[1] == $cropType;
+            });
+
+        // Get the filtered records
+        $records = $stmt->process($csv);
+
+        // Convert records to an array
+        $results = iterator_to_array($records);
+
+        return $results;
+    }
+
     public function predictFertilizer(Request $request)
     {
         // Validate the incoming request
@@ -118,6 +174,9 @@ class AuthController extends Controller
             ]);
             // Get the response body
             $responseBody = $response->getBody()->getContents();
+            $response = json_decode($responseBody);
+            $v = $this->getFertilizerPrediction($this->getSoilType($features[0],$response[0]));
+            dd($v);
             // Return the response from the external API
             return response()->json($this->handleResponse(true, 'fertilizer prediction is successfull performed',
                 json_decode($responseBody)), $response->getStatusCode());
@@ -132,7 +191,7 @@ class AuthController extends Controller
         $image = $request->file('image');
         $imageContent = file_get_contents($image->getRealPath());
         $base64Image = base64_encode($imageContent);
-        $payload = [            'image' => $base64Image];
+        $payload = ['image' => $base64Image];
         $client = new Client();
         try {
             $response = $client->post('http://localhost:5000/predict-disease', [

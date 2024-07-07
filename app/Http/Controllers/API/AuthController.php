@@ -134,7 +134,7 @@ K*/
         $matchedRow = [];
         if (($handle = fopen($csvFilePath, 'r')) !== false) {
             while (($data = fgetcsv($handle, 1000, ',')) !== false) {
-                if ($data[0] == $soilType && $data[1] == $cropType) {
+                if ($data[0] == $soilType && $data[5] == $cropType) {
                     $matchedRow = $data;
                     break;
                 }

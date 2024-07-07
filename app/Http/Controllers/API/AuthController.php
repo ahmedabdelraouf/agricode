@@ -164,7 +164,7 @@ K*/
         // Prepare the payload for the API request
         $payload = json_encode(['features' => $features]);
         $client = new Client();
-        try {
+//        try {
             // Make the request to the external API
             $response = $client->post('http://localhost:5000/predictFertilizer', [
                 'headers' => [
@@ -180,9 +180,9 @@ K*/
             // Return the response from the external API
             return response()->json($this->handleResponse(true, 'fertilizer prediction is successfull performed',
                 json_decode($responseBody)), $response->getStatusCode());
-        } catch (\Exception $e) {
-            return response()->json($this->handleResponse(false, 'Failed to make fertilizer prediction'), 422);
-        }
+//        } catch (\Exception $e) {
+//            return response()->json($this->handleResponse(false, 'Failed to make fertilizer prediction'), 422);
+//        }
     }
 
     public function predictDisease(Request $request)

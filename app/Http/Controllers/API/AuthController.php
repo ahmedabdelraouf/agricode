@@ -164,12 +164,12 @@ K*/
         ]);
         // Get the response body
         $responseBody = $response->getBody()->getContents();
-        $response = json_decode($responseBody);
+        $responseDecoded = json_decode($responseBody);
         $predictionValue = $this->getFertilizerPrediction($this->getSoilType($features[0]), $response[0], $request->input('area_type'), $request->input('area_value'));
-        $response[] = $predictionValue;
+        $responseDecoded[] = $predictionValue;
         // Return the response from the external API
         return response()->json($this->handleResponse(true, 'fertilizer prediction is successfull performed',
-            json_decode($responseBody)), $response->getStatusCode());
+            $responseDecoded), $response->getStatusCode());
 //        } catch (\Exception $e) {
 //            return response()->json($this->handleResponse(false, 'Failed to make fertilizer prediction'), 422);
 //        }

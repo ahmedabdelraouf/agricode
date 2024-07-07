@@ -167,6 +167,7 @@ K*/
         $responseDecoded = json_decode($responseBody);
         $predictionValue = $this->getFertilizerPrediction($this->getSoilType($features[0]), $response[0], $request->input('area_type'), $request->input('area_value'));
         $responseDecoded[] = $predictionValue;
+        dd($responseDecoded);
         // Return the response from the external API
         return response()->json($this->handleResponse(true, 'fertilizer prediction is successfull performed',
             $responseDecoded), $response->getStatusCode());

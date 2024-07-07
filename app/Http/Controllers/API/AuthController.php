@@ -129,31 +129,18 @@ K*/
 
     public function getFertilizerPrediction($soilType, $cropType)
     {
-        // Define the path to the CSV file
         $csvFilePath = public_path('Fertilizer_Prediction_with_Fertilization.csv');
-
-        // Load the CSV file
-        if (!file_exists($csvFilePath) || !is_readable($csvFilePath)) {
-            return response()->json(['error' => 'CSV file not found or not readable'], 404);
+        $matchedRow = [];
+        if (($handle = fopen($csvFilePath, 'r')) !== false) {
+            while (($data = fgetcsv($handle, 1000, ',')) !== false) {
+                if ($data[0] == $soilType && $data[1] == $cropType) {
+                    $matchedRow = $data;
+                    break;
+                }
+            }
+            fclose($handle);
         }
-
-        // Use League\Csv\Reader to read the CSV file
-        $csv = Reader::createFromPath($csvFilePath, 'r');
-        $csv->setHeaderOffset(0); // If your CSV file has headers, adjust accordingly
-
-        // Create a Statement to filter records
-        $stmt = (new Statement())
-            ->where(function ($record) use ($soilType, $cropType) {
-                return $record[0] == $soilType && $record[1] == $cropType;
-            });
-
-        // Get the filtered records
-        $records = $stmt->process($csv);
-
-        // Convert records to an array
-        $results = iterator_to_array($records);
-
-        return $results;
+        return $matchedRow;
     }
 
     public function predictFertilizer(Request $request)

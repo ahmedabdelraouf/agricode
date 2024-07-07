@@ -125,28 +125,33 @@ K*/
 
     }
 
-    public function getFertilizerPrediction($soilType, $cropType, $areaType, $areaValue)
+    public function getFertilizerPrediction($soilType, $cropType, $areaType = "arce", $areaValue = 1)
     {
-        $csvFilePath = public_path('Fertilizer_Prediction_with_Fertilization.csv');
-        $matchedRow = [];
-        if (($handle = fopen($csvFilePath, 'r')) !== false) {
-            while (($data = fgetcsv($handle, 1000, ',')) !== false) {
-                if ($data[0] == $soilType && $data[5] == $cropType) {
-                    $matchedRow = $data;
-                    break;
+        try {
+            $csvFilePath = public_path('Fertilizer_Prediction_with_Fertilization.csv');
+            $matchedRow = [];
+            if (($handle = fopen($csvFilePath, 'r')) !== false) {
+                while (($data = fgetcsv($handle, 1000, ',')) !== false) {
+                    if ($data[0] == $soilType && $data[5] == $cropType) {
+                        $matchedRow = $data;
+                        break;
+                    }
                 }
+                fclose($handle);
             }
-            fclose($handle);
+            if ($areaType == "arce") {
+                $valPerCaratOrArce = $matchedRow[6];
+            } else {
+                $valPerCaratOrArce = $matchedRow[6] / 24;
+            }
+            return $areaValue * $valPerCaratOrArce;
+        } catch (\Exception $e) {
+            return 0;
         }
-        if ($areaType == "arce") {
-            $valPerCaratOrArce = $matchedRow[6];
-        } else {
-            $valPerCaratOrArce = $matchedRow[6] / 24;
-        }
-        return $areaValue * $valPerCaratOrArce;
     }
 
-    public function predictFertilizer(Request $request)
+    public
+    function predictFertilizer(Request $request)
     {
         // Validate the incoming request
         $request->validate(['features' => 'required|array']);
@@ -154,28 +159,29 @@ K*/
         // Prepare the payload for the API request
         $payload = json_encode(['features' => $features]);
         $client = new Client();
-//        try {
-        // Make the request to the external API
-        $response = $client->post('http://localhost:5000/predictFertilizer', [
-            'headers' => [
-                'Content-Type' => 'application/json',
-            ],
-            'body' => $payload,
-        ]);
-        // Get the response body
-        $responseBody = $response->getBody()->getContents();
-        $responseDecoded = json_decode($responseBody);
-        $predictionValue = $this->getFertilizerPrediction($this->getSoilType($features[0]), $responseDecoded[0], $request->input('area_type'), $request->input('area_value'));
-        $responseDecoded[] = $predictionValue;
-        // Return the response from the external API
-        return response()->json($this->handleResponse(true, 'fertilizer prediction is successfull performed',
-            $responseDecoded), $response->getStatusCode());
-//        } catch (\Exception $e) {
-//            return response()->json($this->handleResponse(false, 'Failed to make fertilizer prediction'), 422);
-//        }
+        try {
+            // Make the request to the external API
+            $response = $client->post('http://localhost:5000/predictFertilizer', [
+                'headers' => [
+                    'Content-Type' => 'application/json',
+                ],
+                'body' => $payload,
+            ]);
+            // Get the response body
+            $responseBody = $response->getBody()->getContents();
+            $responseDecoded = json_decode($responseBody);
+            $predictionValue = $this->getFertilizerPrediction($this->getSoilType($features[0]), $responseDecoded[0], $request->input('area_type'), $request->input('area_value'));
+            $responseDecoded[] = $predictionValue;
+            // Return the response from the external API
+            return response()->json($this->handleResponse(true, 'fertilizer prediction is successfull performed',
+                $responseDecoded), $response->getStatusCode());
+        } catch (\Exception $e) {
+            return response()->json($this->handleResponse(false, 'Failed to make fertilizer prediction'), 422);
+        }
     }
 
-    public function predictDisease(Request $request)
+    public
+    function predictDisease(Request $request)
     {
         $request->validate(['image' => 'required|image|mimes:jpeg,png,jpg,gif|max:2048',]);
         $image = $request->file('image');
@@ -198,7 +204,8 @@ K*/
         }
     }
 
-    public function handleResponse($status = false, $message = "something went wrong", ...$data)
+    public
+    function handleResponse($status = false, $message = "something went wrong", ...$data)
     {
         return [
             'message' => $message,

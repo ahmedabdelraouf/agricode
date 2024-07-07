@@ -129,6 +129,7 @@ K*/
 
     public function getFertilizerPrediction($soilType, $cropType)
     {
+        dd($soilType, $cropType);
         $csvFilePath = public_path('Fertilizer_Prediction_with_Fertilization.csv');
         $matchedRow = [];
         if (($handle = fopen($csvFilePath, 'r')) !== false) {

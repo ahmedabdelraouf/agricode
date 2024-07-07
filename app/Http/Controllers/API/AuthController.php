@@ -163,7 +163,7 @@ K*/
             $responseBody = $response->getBody()->getContents();
             $response = json_decode($responseBody);
             $v = $this->getFertilizerPrediction($this->getSoilType($features[0]),$response[0]);
-            dd($v);
+            dd($features,$response,$v);
             // Return the response from the external API
             return response()->json($this->handleResponse(true, 'fertilizer prediction is successfull performed',
                 json_decode($responseBody)), $response->getStatusCode());
